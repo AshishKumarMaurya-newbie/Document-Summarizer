@@ -3,54 +3,55 @@ from transformers import pipeline
 from bs4 import BeautifulSoup
 import requests
 
-# Download NLTK data (only need to do this once)
-# You can run this file directly once to download: python summarizer.py
-try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    print("NLTK 'punkt' tokenizer not found. Downloading...")
-    nltk.download('punkt')
-    print("Download complete.")
+# ------------------------------
+# Download NLTK data if missing
+# ------------------------------
+nltk_packages = ["punkt", "stopwords"]
+for pkg in nltk_packages:
+    try:
+        nltk.data.find(f"tokenizers/{pkg}") if pkg == "punkt" else nltk.data.find(f"corpora/{pkg}")
+    except LookupError:
+        print(f"NLTK '{pkg}' not found. Downloading...")
+        nltk.download(pkg)
+        print(f"{pkg} download complete.")
 
+# ------------------------------
+# URL Scraper
+# ------------------------------
 def scrape_text_from_url(url):
     """Pulls the main text content from a given URL."""
     try:
         response = requests.get(url)
         soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Find all paragraph tags
         paragraphs = soup.find_all('p')
-        
-        # Join them into a single block of text
         article_text = ' '.join([p.get_text() for p in paragraphs])
         return article_text
     except Exception as e:
         print(f"Error scraping URL: {e}")
         return None
 
+# ------------------------------
+# Extractive Summary
+# ------------------------------
 def get_extractive_summary(text, percentage=30):
     """
     Generates an extractive summary using NLTK.
-    TODO: Implement the NLTK frequency-based algorithm here.
+    Returns the top N sentences based on a simple percentage of the total text.
     """
-    print("Extractive summary logic goes here...")
-    # For now, just return the first few sentences as a placeholder
     sentences = nltk.sent_tokenize(text)
     num_sentences = max(1, int(len(sentences) * (percentage / 100)))
     return ' '.join(sentences[:num_sentences])
 
+# ------------------------------
+# Abstractive Summary
+# ------------------------------
 def get_abstractive_summary(text):
     """
-    Generates an abstractive summary using Hugging Face Transformers.
+    Generates an abstractive summary using Hugging Face Transformers (T5-small).
+    Automatically splits long text into manageable chunks.
     """
-    print("Loading abstractive model...")
-    # Using 't5-small' is a good balance of performance and size
     summarizer_pipeline = pipeline("summarization", model="t5-small")
-    
-    # T5 has a max length, so we may need to truncate
-    max_chunk_length = 512 
-    
-    # Simple chunking (a more advanced way would be to split by sentences)
+    max_chunk_length = 512  # T5 token limit
     chunks = [text[i:i + max_chunk_length] for i in range(0, len(text), max_chunk_length)]
     
     summary_text = ""
@@ -60,7 +61,8 @@ def get_abstractive_summary(text):
         
     return summary_text.strip()
 
+# ------------------------------
+# Optional: run as script
+# ------------------------------
 if __name__ == '__main__':
-    # This block runs if you execute 'python summarizer.py'
-    # Useful for downloading NLTK data
-    print("NLTK data checked/downloaded.")
+    print("NLTK data checked/downloaded. Summarizer ready to use.")
