@@ -56,7 +56,7 @@ def get_abstractive_summary(text):
     
     summary_text = ""
     for chunk in chunks:
-        summary = summarizer_pipeline(chunk, max_length=150, min_length=30, do_sample=False)
+        summary = summarizer_pipeline(chunk, max_new_tokens=150, min_new_tokens=30, do_sample=False)
         summary_text += summary[0]['summary_text'] + " "
         
     return summary_text.strip()
